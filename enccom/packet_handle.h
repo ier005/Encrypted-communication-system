@@ -4,6 +4,7 @@
 #include <linux/ip.h>
 #include "options.h"
 
-int handle_packet(struct sk_buff *skb);
+int handle_packet_in(struct sk_buff *skb);
+int handle_packet_out(struct sk_buff *skb);
 
 #endif
