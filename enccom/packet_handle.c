@@ -76,15 +76,14 @@ int handle_packet_out(struct sk_buff *skb)
 	struct option *opt = opt_out_head;
 
 	while (opt) {
-		printk("search an option\n");
 		if (opt->ip == ipheader->daddr) {
 			//printk("ip header length: %d, protocol: %d, saddr: %#x, daddr: %#x\n", ipheader->ihl * 4, ipheader->protocol, ipheader->saddr, ipheader->daddr);
+			printk("dport: %hu\n", ntohs(*(short *)(buf+2)));
 			unsigned char *buf = skb_network_header(skb) + ipheader->ihl * 4;
 			/*if (ipheader->protocol == 51) {
 				ipheader->protocol = 6;
 			}*/
-			crypt(ENCCOM_DECRYPT, buf, skb_tail_pointer(skb) - buf, opt->key);
-			printk("dport: %hu\n", ntohs(*(short *)(buf+2)));
+			crypt(ENCCOM_ENCRYPT, buf, skb_tail_pointer(skb) - buf, opt->key);
 			break;
 		}
 		opt = opt->next;
