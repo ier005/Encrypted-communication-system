@@ -75,8 +75,8 @@ int handle_packet_out(struct sk_buff *skb)
 	*/
 	struct option *opt = opt_out_head;
 
-
 	while (opt) {
+		printk("search an option\n");
 		if (opt->ip == ipheader->daddr) {
 			//printk("ip header length: %d, protocol: %d, saddr: %#x, daddr: %#x\n", ipheader->ihl * 4, ipheader->protocol, ipheader->saddr, ipheader->daddr);
 			unsigned char *buf = skb_network_header(skb) + ipheader->ihl * 4;

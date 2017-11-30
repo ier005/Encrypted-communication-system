@@ -15,18 +15,22 @@ int main(int argc, char **argv) {
 	int fd;
 	char key[17] = "0123456789abcdef";
 
-	if (argc != 2) {
-		printf("Usage: ./main ip\n");
+	if (argc != 3) {
+		printf("Usage: ./main ip io\n");
 		return 1;
 	}
 	printf("%s\n", argv[1]);
 
-	unsigned char io = 0;
+	unsigned char io;
+	if (argv[2][0] == '1')
+		io = OPT_OUT;
+	else
+		io = OPT_IN;
 	unsigned int id = 1;
 	unsigned char type = 1;
 	unsigned int ipn = inet_addr(argv[1]);
 	unsigned char key_len = 16;
-	memcpy(opt, &io, 1);
+	memcpy(opt, &io, OPT_OUT);
 	memcpy(opt + 1, &id, 4);
 	memcpy(opt + 5, &type, 1);
 	memcpy(opt + 6, &ipn, 4);

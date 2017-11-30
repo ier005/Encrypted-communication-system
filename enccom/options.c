@@ -4,16 +4,16 @@ struct option *opt_in_head, *opt_in_tail, *opt_out_head, *opt_out_tail;
 
 void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key)
 {
-	struct option *opt, *option_head, *option_tail;
+	struct option *opt, **option_head, **option_tail;
 	if ((opt = kmalloc(sizeof(struct option), GFP_KERNEL)) == NULL)
 		return;
 
 	if (io == OPT_OUT) {
-		option_head = opt_out_head;
-		option_tail = opt_out_tail;
+		option_head = &opt_out_head;
+		option_tail = &opt_out_tail;
 	} else {
-		option_head = opt_in_head;
-		option_tail = opt_in_tail;
+		option_head = &opt_in_head;
+		option_tail = &opt_in_tail;
 	}
 
 	opt->id = id;
@@ -21,13 +21,13 @@ void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char 
 	opt->ip = ip;
 	opt->key = key;
 
-	if (option_tail) {
-		option_tail->next = opt;
-		opt->prev = option_tail;
+	if (*option_tail) {
+		(*option_tail)->next = opt;
+		opt->prev = *option_tail;
 		opt->next = 0;
-		option_tail = opt;
+		*option_tail = opt;
 	} else {
-		option_head = option_tail = opt;
+		*option_head = *option_tail = opt;
 		opt->next = 0;
 		opt->prev = 0;
 	}
@@ -57,13 +57,15 @@ void mod_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char 
 void del_opt(u_int8_t io, u_int32_t id)
 {
 	struct option *opt;
-	struct option *option_head, *option_tail;
+	struct option **option_head, **option_tail;
 	if (io == OPT_OUT) {
-		option_head = opt = opt_out_head;
-		option_tail = opt_out_tail;
+		opt = opt_out_head;
+		option_head = &opt_out_head;
+		option_tail = &opt_out_tail;
 	} else {
-		option_head = opt = opt_in_head;
-		option_tail = opt_in_tail;
+		opt = opt_in_head;
+		option_head = &opt_in_head;
+		option_tail = &opt_in_tail;
 	}
 	
 	while (opt != NULL && opt->id != id)
@@ -74,12 +76,12 @@ void del_opt(u_int8_t io, u_int32_t id)
 	if (opt->next)
 		opt->next->prev = opt->prev;
 	else
-		option_tail = opt->prev;
+		*option_tail = opt->prev;
 
 	if (opt->prev)
 		opt->prev->next = opt->next;
 	else
-		option_head = opt->next;
+		*option_head = opt->next;
 
 	kfree(opt->key);
 	kfree(opt);
