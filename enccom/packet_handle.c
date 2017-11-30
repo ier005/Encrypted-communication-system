@@ -78,8 +78,8 @@ int handle_packet_out(struct sk_buff *skb)
 	while (opt) {
 		if (opt->ip == ipheader->daddr) {
 			//printk("ip header length: %d, protocol: %d, saddr: %#x, daddr: %#x\n", ipheader->ihl * 4, ipheader->protocol, ipheader->saddr, ipheader->daddr);
-			printk("dport: %hu\n", ntohs(*(short *)(buf+2)));
 			unsigned char *buf = skb_network_header(skb) + ipheader->ihl * 4;
+			printk("dport: %hu\n", ntohs(*(short *)(buf+2)));
 			/*if (ipheader->protocol == 51) {
 				ipheader->protocol = 6;
 			}*/
