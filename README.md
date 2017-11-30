@@ -5,4 +5,4 @@ An encrypted communication system:
 - A userspace application to interact with *enccom* - uaccess
 
 
-*Linux kernel version: 4.9.0
+*Linux kernel version: 4.9.0*

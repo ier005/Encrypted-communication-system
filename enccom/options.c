@@ -1,16 +1,25 @@
 #include "options.h"
 
-struct option *option_head, *option_tail;
+struct option *opt_in_head, *opt_in_tail, *opt_out_head, *opt_out_tail;
 
-void add_opt(u_int32_t id, u_int8_t type, __be32 ip)
+void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key)
 {
-	struct option *opt;
+	struct option *opt, *option_head, *option_tail;
 	if ((opt = kmalloc(sizeof(struct option), GFP_KERNEL)) == NULL)
 		return;
+
+	if (io == OPT_OUT) {
+		option_head = opt_out_head;
+		option_tail = opt_out_tail;
+	} else {
+		option_head = opt_in_head;
+		option_tail = opt_in_tail;
+	}
 
 	opt->id = id;
 	opt->type = type;
 	opt->ip = ip;
+	opt->key = key;
 
 	if (option_tail) {
 		option_tail->next = opt;
@@ -25,9 +34,37 @@ void add_opt(u_int32_t id, u_int8_t type, __be32 ip)
 
 }
 
-void del_opt(u_int32_t id)
+void mod_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key)
 {
-	struct option *opt = option_head;
+	struct option *opt;
+
+	if (io == OPT_OUT)
+		opt = opt_out_head;
+	else
+		opt = opt_in_head;
+
+	while (opt != NULL && opt->id != id)
+		opt = opt->next;
+	if (!opt)
+		return;
+
+	opt->type = type;
+	opt->ip = ip;
+	kfree(opt->key);
+	opt->key = key;
+}
+
+void del_opt(u_int8_t io, u_int32_t id)
+{
+	struct option *opt;
+	struct option *option_head, *option_tail;
+	if (io == OPT_OUT) {
+		option_head = opt = opt_out_head;
+		option_tail = opt_out_tail;
+	} else {
+		option_head = opt = opt_in_head;
+		option_tail = opt_in_tail;
+	}
 	
 	while (opt != NULL && opt->id != id)
 		opt = opt->next;
@@ -44,13 +81,21 @@ void del_opt(u_int32_t id)
 	else
 		option_head = opt->next;
 
+	kfree(opt->key);
 	kfree(opt);
 }
 
 void free_opts(void)
 {
-	struct option *opt = option_head;
+	struct option *opt = opt_in_head;
 	while (opt) {
+		kfree(opt->key);
+		kfree(opt);
+		opt = opt->next;
+	}
+	opt = opt_out_head;
+	while (opt) {
+		kfree(opt->key);
 		kfree(opt);
 		opt = opt->next;
 	}

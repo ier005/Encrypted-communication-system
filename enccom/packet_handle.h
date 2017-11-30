@@ -2,6 +2,7 @@
 #define ENCCOM_PACKET_HANDLE_H
 
 #include <linux/ip.h>
+#include <net/ip.h>
 #include "options.h"
 #include "crypto.h"
 

@@ -1,11 +1,10 @@
 #include "crypto.h"
 
-int crypt(int type, unsigned char *buf, unsigned int len)
+int crypt(int type, unsigned char *buf, unsigned int len, unsigned char *key)
 {
 	struct crypto_blkcipher *aes;
 	struct blkcipher_desc desc;
 	struct scatterlist sg;
-	char key[17] = "0123456789abcdef";
 	unsigned int remainder = len % 16;
 	unsigned int rlen = len - remainder;
 	int i;
