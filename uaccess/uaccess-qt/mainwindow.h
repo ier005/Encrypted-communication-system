@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QFileDialog>
 #include <QStandardItemModel>
 #include "optiondialog.h"
 #include <QtDebug>
@@ -20,6 +21,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    QFileDialog *fileDialog;
     int fd;
     QAction *icon_start, *icon_end;
     QAction *icon_import, *icon_export;
@@ -52,6 +54,7 @@ public slots:
 
 signals:
     void sig_option_info(int operation, int id, int alg, QString ip, QString key, int fd);
+    void sig_original_option(int oper, int id, int type, QString ip, int key_len, QString key, int fd);
 };
 
 void cclose(int fd);

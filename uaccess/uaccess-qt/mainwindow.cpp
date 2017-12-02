@@ -9,6 +9,7 @@ void cclose(int fd)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
+    fileDialog(new QFileDialog),
     icon_start(new QAction(QIcon(":/start.png"), tr("Start the encrypted system"), this)),
     icon_end(new QAction(QIcon(":/end.png"), tr("Stop the encrypted system"), this)),
     icon_import(new QAction(QIcon(":/import.png"), tr("Import rules"), this)),
@@ -80,6 +81,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(optionDialog, &OptionDialog::sig_option, this, &MainWindow::option_handle);
     connect(this, &MainWindow::sig_option_info, optionDialog, &OptionDialog::option_info);
+    connect(this, &MainWindow::sig_original_option, optionDialog, &OptionDialog::handle_original_option);
 }
 
 MainWindow::~MainWindow()
@@ -90,6 +92,7 @@ MainWindow::~MainWindow()
     delete icon_end;
     delete icon_import;
     delete icon_export;
+    delete fileDialog;
     delete ui;
     cclose(fd);
     if (system("rmmod enccom"))
@@ -116,12 +119,80 @@ void MainWindow::on_icon_end_clicked()
 
 void MainWindow::on_icon_import_clicked()
 {
-    QMessageBox::information(this, "Info", "to be done");
+    QString filename = fileDialog->getOpenFileName(this, "Open");
+    if (filename.isEmpty())
+        return;
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Error", "Can not open the file");
+        return;
+    }
+    QTextStream out(&file);
+    while (!out.atEnd()) {
+        QString sio, salg, ip, key;
+        out >> sio;
+        if (sio.isEmpty()) {
+            out.skipWhiteSpace();
+            continue;
+        }
+        if (sio.startsWith('#')) {
+            out.readLine();
+            continue;
+        }
+
+        out >> salg >> ip >> key;
+        int oper = (sio == "out") ? 0 : 1;
+        int id = (sio == "out") ? this->out_id : this->in_id;
+        int alg = 0;
+        while (salg != algs.at(alg))
+            alg++;
+
+        emit sig_original_option(oper, id, alg, ip, key.length(), key, this->fd);
+    }
 }
 
 void MainWindow::on_icon_export_clicked()
 {
-    QMessageBox::information(this, "Info", "to be done");
+    QString filename = fileDialog->getSaveFileName(this, "Save as", "./rules.txt");
+    if (filename.isEmpty())
+        return;
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Error", "Can not open the file!");
+        return;
+    }
+    QTextStream in(&file);
+    int rows = out_rules->rowCount();
+    for (int i = 0; i < rows; i++) {
+        QString s("out ");
+        QModelIndex index = out_rules->index(i, 1);
+        s += out_rules->data(index).toString();
+        s += " ";
+        index = out_rules->index(i, 2);
+        s += out_rules->data(index).toString();
+        s += " ";
+        index = out_rules->index(i, 3);
+        s += out_rules->data(index).toString();
+        s += "\n";
+        in << s;
+    }
+
+    rows = in_rules->rowCount();
+    for (int i = 0; i < rows; i++) {
+        QString s("in ");
+        QModelIndex index = in_rules->index(i, 1);
+        s += in_rules->data(index).toString();
+        s += " ";
+        index = in_rules->index(i, 2);
+        s += in_rules->data(index).toString();
+        s += " ";
+        index = in_rules->index(i, 3);
+        s += in_rules->data(index).toString();
+        s += "\n";
+        in << s;
+    }
+    file.close();
+
 }
 
 void MainWindow::on_out_add_clicked()
@@ -237,7 +308,7 @@ void MainWindow::on_out_del_clicked()
     int id = out_rules->data(index).toInt();
     char opt[5];
     opt[0] = 3;
-    memcpy(opt, &id, 4);
+    memcpy(opt + 1, &id, 4);
     write(fd, opt, 5);
 
     out_rules->removeRow(index.row());
@@ -253,7 +324,7 @@ void MainWindow::on_in_del_clicked()
     int id = in_rules->data(index).toInt();
     char opt[5];
     opt[0] = 3;
-    memcpy(opt, &id, 4);
+    memcpy(opt + 1, &id, 4);
     write(fd, opt, 5);
 
     in_rules->removeRow(index.row());

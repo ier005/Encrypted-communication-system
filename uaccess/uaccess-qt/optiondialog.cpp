@@ -15,6 +15,7 @@ OptionDialog::OptionDialog(QWidget *parent) :
 
 OptionDialog::~OptionDialog()
 {
+    delete re;
     delete ui;
 }
 
@@ -46,24 +47,7 @@ void OptionDialog::on_pushButton_clicked()
         return;
     }
 
-    switch (operation) {
-        case 0:
-            cmt_option(1, 1, id, alg, ip.toLatin1().data(), key_len, key.toLatin1().data());
-            break;
-        case 1:
-            cmt_option(1, 0, id, alg, ip.toLatin1().data(), key_len, key.toLatin1().data());
-            break;
-        case 2:
-            cmt_option(2, 1, id, alg, ip.toLatin1().data(), key_len, key.toLatin1().data());
-            break;
-        case 3:
-            cmt_option(2, 0, id, alg, ip.toLatin1().data(), key_len, key.toLatin1().data());
-            break;
-        default:
-            break;
-    }
-    
-    emit sig_option(operation, id, alg, ip, key);
+    handle_original_option(operation, id, alg, ip, key_len, key, fd);
     this->accept();
 }
 
@@ -82,7 +66,29 @@ void OptionDialog::option_info(int operation, int id, int alg, QString ip, QStri
     this->ui->lineEdit_2->setText(key);
 }
 
-void OptionDialog::cmt_option(int oper, int io, int id, int type, char *ip, int key_len, char *key)
+void OptionDialog::handle_original_option(int oper, int id, int alg, QString ip, int key_len, QString key, int fd)
+{
+    switch (oper) {
+        case 0:
+            cmt_option(1, 1, id, alg, ip.toLatin1().data(), key_len, key.toLatin1().data(), fd);
+            break;
+        case 1:
+            cmt_option(1, 0, id, alg, ip.toLatin1().data(), key_len, key.toLatin1().data(), fd);
+            break;
+        case 2:
+            cmt_option(2, 1, id, alg, ip.toLatin1().data(), key_len, key.toLatin1().data(), fd);
+            break;
+        case 3:
+            cmt_option(2, 0, id, alg, ip.toLatin1().data(), key_len, key.toLatin1().data(), fd);
+            break;
+        default:
+            break;
+    }
+
+    emit sig_option(oper, id, alg, ip, key);
+}
+
+void OptionDialog::cmt_option(int oper, int io, int id, int type, char *ip, int key_len, char *key, int fd)
 {
     char opt[MAX_OPT_LEN];
     int len = OPT_HEAD_LEN + key_len;

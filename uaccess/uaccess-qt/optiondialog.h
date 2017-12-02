@@ -33,12 +33,13 @@ private slots:
 
 public slots:
     void option_info(int operation, int id, int alg, QString ip, QString key, int fd);
+    void handle_original_option(int oper, int id, int type, QString ip, int key_len, QString key, int fd);
 
 signals:
     void sig_option(int operation, int id, int alg, QString ip, QString key);
 
 private:
-    void cmt_option(int oper, int io, int id, int type, char *ip, int key_len, char*key);
+    void cmt_option(int oper, int io, int id, int type, char *ip, int key_len, char *key, int fd);
 
     Ui::OptionDialog *ui;
     QRegExp *re;
