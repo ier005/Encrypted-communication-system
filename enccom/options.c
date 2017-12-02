@@ -1,5 +1,6 @@
 #include "options.h"
 
+int mod_running;
 struct option *opt_in_head, *opt_in_tail, *opt_out_head, *opt_out_tail;
 
 void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key)

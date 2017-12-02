@@ -1,11 +1,12 @@
 #include "packet_handle.h"
 #include <linux/byteorder/generic.h>
 
-extern struct option *opt_in_head, *opt_in_tail, *opt_out_head, *opt_out_tail;
 
 
 int handle_packet_in(struct sk_buff *skb)
 {
+	if (!mod_running)
+		return 0;
 	struct iphdr *ipheader = ip_hdr(skb);
 	//struct skb_shared_info *psh = skb_shinfo(skb);
 	struct option *opt = opt_in_head;
@@ -47,6 +48,8 @@ int handle_packet_in(struct sk_buff *skb)
 
 int handle_packet_out(struct sk_buff *skb)
 {
+	if (!mod_running)
+		return 0;
 	struct iphdr *ipheader = ip_hdr(skb);
 	/*struct skb_shared_info *psh = skb_shinfo(skb);
 	int key_len = 16;
