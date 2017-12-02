@@ -1,7 +1,4 @@
 #include "packet_handle.h"
-#include <linux/byteorder/generic.h>
-
-
 
 int handle_packet_in(struct sk_buff *skb)
 {
@@ -86,6 +83,13 @@ int handle_packet_out(struct sk_buff *skb)
 			/*if (ipheader->protocol == 51) {
 				ipheader->protocol = 6;
 			}*/
+			struct tcphdr *tcph = tcp_hdr(skb);
+			tcph->check = 0;
+			skb->csum = csum_partial((unsigned char *)tcph, ntohs(ipheader->tot_len) - ip_hdrlen(skb), 0);
+			tcph->check = csum_tcpudp_magic(ipheader->saddr, ipheader->daddr, ntohs(ipheader->tot_len) - ip_hdrlen(skb), ipheader->protocol, skb->csum);
+			//ip->check = 0;
+			//iph->check = ip_fast_csum(iph, iph->ihl);
+			skb->ip_summed = CHECKSUM_NONE;
 			crypt(ENCCOM_ENCRYPT, buf, skb_tail_pointer(skb) - buf, opt->key);
 			break;
 		}

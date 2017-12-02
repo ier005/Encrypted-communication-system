@@ -3,6 +3,7 @@
 
 #include <linux/ip.h>
 #include <net/ip.h>
+#include <net/tcp.h>
 #include "options.h"
 #include "crypto.h"
 
