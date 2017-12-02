@@ -2,9 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QMessageBox>
 #include <QStandardItemModel>
-#include <unistd.h>
 #include "optiondialog.h"
 #include <QtDebug>
 
@@ -22,6 +20,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    int fd;
     QAction *icon_start, *icon_end;
     QAction *icon_import, *icon_export;
     QStandardItemModel *in_rules, *out_rules;
@@ -44,11 +43,17 @@ private slots:
 
     void on_tableView_2_clicked(const QModelIndex &index);
 
+    void on_out_del_clicked();
+
+    void on_in_del_clicked();
+
 public slots:
     void option_handle(int operation, int id, int alg, QString ip, QString key);
 
 signals:
-    void sig_option_info(int operation, int id, int alg, QString ip, QString key);
+    void sig_option_info(int operation, int id, int alg, QString ip, QString key, int fd);
 };
+
+void cclose(int fd);
 
 #endif // MAINWINDOW_H

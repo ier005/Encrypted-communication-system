@@ -1,6 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+void cclose(int fd)
+{
+    close(fd);
+}
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -10,7 +15,9 @@ MainWindow::MainWindow(QWidget *parent) :
     icon_export(new QAction(QIcon(":/export.png"), tr("Export rules"), this)),
     in_rules(new QStandardItemModel),
     out_rules(new QStandardItemModel),
-    optionDialog(new OptionDialog(this))
+    optionDialog(new OptionDialog(this)),
+    out_id(0),
+    in_id(0)
 {
     ui->setupUi(this);
 
@@ -56,12 +63,22 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->out_del->setEnabled(0);
     ui->in_del->setEnabled(0);
 
+    if ((fd = open("/dev/enccom", O_WRONLY, S_IWUSR)) == -1) {
+        QMessageBox::critical(this, "Error", "Can not open /dev/enccom!");
+        ui->out_add->setEnabled(0);
+        ui->in_add->setEnabled(0);
+        icon_start->setEnabled(0);
+        icon_import->setEnabled(0);
+    }
+
+    ui->statusBar->showMessage(tr("The encrypted system has been stopped."));
+
     connect(icon_start, &QAction::triggered, this, &MainWindow::on_icon_start_clicked);
     connect(icon_end, &QAction::triggered, this, &MainWindow::on_icon_end_clicked);
     connect(icon_import, &QAction::triggered, this, &MainWindow::on_icon_import_clicked);
     connect(icon_export, &QAction::triggered, this, &MainWindow::on_icon_export_clicked);
 
-    connect(optionDialog, &OptionDialog::add_option, this, &MainWindow::option_handle);
+    connect(optionDialog, &OptionDialog::sig_option, this, &MainWindow::option_handle);
     connect(this, &MainWindow::sig_option_info, optionDialog, &OptionDialog::option_info);
 }
 
@@ -74,29 +91,27 @@ MainWindow::~MainWindow()
     delete icon_import;
     delete icon_export;
     delete ui;
-    qDebug() << "end";
+    cclose(fd);
+    if (system("rmmod enccom"))
+        QMessageBox::critical(this, "Error", "Can not remove the encrypted module!");
 }
 
 void MainWindow::on_icon_start_clicked()
 {
-    if (system("insmod /home/test/km/enccom/enccom.ko")) {
-        QMessageBox::critical(this, "Error", "Please run as super user!");
-    } else {
-        icon_start->setEnabled(0);
-        icon_end->setEnabled(1);
-        ui->statusBar->showMessage(tr("The encrypted system is running!"));
-    }
+    unsigned char opt = 0;
+    write(fd, &opt, 1);
+    icon_start->setEnabled(0);
+    icon_end->setEnabled(1);
+    ui->statusBar->showMessage(tr("The encrypted system is running!"));
 }
 
 void MainWindow::on_icon_end_clicked()
 {
-    if (system("rmmod enccom")) {
-        QMessageBox::critical(this, "Error", "Can not sotp the encrypted module!");
-    } else {
-        icon_start->setEnabled(1);
-        icon_end->setEnabled(0);
-        ui->statusBar->showMessage(tr("The encrypted system has been stopped."));
-    }
+    unsigned char opt = 0;
+    write(fd, &opt, 1);
+    icon_start->setEnabled(1);
+    icon_end->setEnabled(0);
+    ui->statusBar->showMessage(tr("The encrypted system has been stopped."));
 }
 
 void MainWindow::on_icon_import_clicked()
@@ -111,13 +126,13 @@ void MainWindow::on_icon_export_clicked()
 
 void MainWindow::on_out_add_clicked()
 {
-    emit sig_option_info(0, out_id, 0, tr(""), tr(""));
+    emit sig_option_info(0, out_id, 0, tr(""), tr(""), fd);
     optionDialog->exec();
 }
 
 void MainWindow::on_in_add_clicked()
 {
-    emit sig_option_info(1, in_id, 0, tr(""), tr(""));
+    emit sig_option_info(1, in_id, 0, tr(""), tr(""), fd);
     optionDialog->exec();
 }
 
@@ -142,7 +157,7 @@ void MainWindow::on_out_mod_clicked()
     index = out_rules->index(row, 3);
     QString key = out_rules->data(index).toString();
 
-    emit sig_option_info(2, id, alg, ip, key);
+    emit sig_option_info(2, id, alg, ip, key, fd);
     optionDialog->exec();
 }
 
@@ -167,7 +182,7 @@ void MainWindow::on_in_mod_clicked()
     index = in_rules->index(row, 3);
     QString key = in_rules->data(index).toString();
 
-    emit sig_option_info(3, id, alg, ip, key);
+    emit sig_option_info(3, id, alg, ip, key, fd);
     optionDialog->exec();
 }
 
@@ -177,14 +192,30 @@ void MainWindow::option_handle(int operation, int id, int alg, QString ip, QStri
     QString salg = algs.at(alg);
     if (operation < 2) {
         QList<QStandardItem *> list;
-        list.append(new QStandardItem(1));
+        list.append(new QStandardItem(QString::number(id, 10)));
         list.append(new QStandardItem(salg));
         list.append(new QStandardItem(ip));
         list.append(new QStandardItem(key));
-        if (operation == 0)
+        if (operation == 0) {
             out_rules->appendRow(list);
-        else
+            out_id = id + 1;
+        } else {
             in_rules->appendRow(list);
+            in_id = id + 1;
+        }
+    } else {
+        QStandardItemModel *rules = (operation == 2) ? out_rules : in_rules;
+        int rows = rules->rowCount();
+        QModelIndex index;
+        for (int i = 0; i < rows; i++) {
+            index = rules->index(i, 0);
+            if (id == rules->data(index).toInt()) {
+                rules->setItem(i, 1, new QStandardItem(algs[alg]));
+                rules->setItem(i, 2, new QStandardItem(ip));
+                rules->setItem(i, 3, new QStandardItem(key));
+                break;
+            }
+        }
     }
 }
 
@@ -198,4 +229,36 @@ void MainWindow::on_tableView_2_clicked(const QModelIndex &index)
 {
     this->ui->in_mod->setEnabled(1);
     this->ui->in_del->setEnabled(1);
+}
+
+void MainWindow::on_out_del_clicked()
+{
+    QModelIndex index = ui->tableView->currentIndex();
+    int id = out_rules->data(index).toInt();
+    char opt[5];
+    opt[0] = 3;
+    memcpy(opt, &id, 4);
+    write(fd, opt, 5);
+
+    out_rules->removeRow(index.row());
+    if (out_rules->rowCount() == 0) {
+        ui->out_mod->setEnabled(0);
+        ui->out_del->setEnabled(0);
+    }
+}
+
+void MainWindow::on_in_del_clicked()
+{
+    QModelIndex index = ui->tableView_2->currentIndex();
+    int id = in_rules->data(index).toInt();
+    char opt[5];
+    opt[0] = 3;
+    memcpy(opt, &id, 4);
+    write(fd, opt, 5);
+
+    in_rules->removeRow(index.row());
+    if (in_rules->rowCount() == 0) {
+        ui->in_mod->setEnabled(0);
+        ui->in_del->setEnabled(0);
+    }
 }

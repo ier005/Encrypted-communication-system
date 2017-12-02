@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 	unsigned int ipn = inet_addr(argv[1]);
 	unsigned char key_len = 16;
 	opt[0] = OPT_ADD;
-	memcpy(opt + 1, &io, OPT_OUT);
+	memcpy(opt + 1, &io, 1);
 	memcpy(opt + 2, &id, 4);
 	memcpy(opt + 6, &type, 1);
 	memcpy(opt + 7, &ipn, 4);
@@ -49,13 +49,7 @@ int main(int argc, char **argv) {
 	}
 
 	write(fd, opt, sizeof(opt)); 
-	close(fd);
-
 	
-	if ((fd = open("/dev/enccom", O_WRONLY, S_IWUSR)) == -1) {
-		printf("Failed to open file\n");
-		return 1;
-	}
 	opt[0] = MODULE_CONT;
 	write(fd, opt, 1);
 	close(fd);
