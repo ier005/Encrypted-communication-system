@@ -5,17 +5,12 @@ int handle_packet_in(struct sk_buff *skb)
 	if (!mod_running)
 		return 0;
 	struct iphdr *ipheader = ip_hdr(skb);
-	//struct skb_shared_info *psh = skb_shinfo(skb);
 	struct option *opt = opt_in_head;
 
 
 	while (opt) {
 		if (opt->ip == ipheader->saddr) {
-			//printk("ip header length: %d, protocol: %d, saddr: %#x, daddr: %#x\n", ipheader->ihl * 4, ipheader->protocol, ipheader->saddr, ipheader->daddr);
 			unsigned char *buf = skb_network_header(skb) + ipheader->ihl * 4;
-			/*if (ipheader->protocol == 51) {
-				ipheader->protocol = 6;
-			}*/
 			crypt(ENCCOM_DECRYPT, buf, skb_tail_pointer(skb) - buf, opt->key);
 			printk("dport: %hu\n", ntohs(*(short *)(buf+2)));
 			break;
@@ -23,23 +18,6 @@ int handle_packet_in(struct sk_buff *skb)
 		opt = opt->next;
 	}
 
-
-/*
-	printk("in: len: %d, data_len: %d, room: %d, real length: %d, ip length: %hu\n", skb->len, skb->data_len, skb->end - skb->tail, skb_headlen(skb), ntohs(ipheader->tot_len));
-	if (skb_is_nonlinear(skb))
-		printk("This packet is not linear. The nr_frags is %d. saddr=%#x, daddr=%#x\n", psh->nr_frags, ipheader->saddr, ipheader->daddr);
-	if (skb->next)
-		printk("next is not NULL");
-	if (psh->frag_list) {
-		struct sk_buff *s = psh->frag_list;
-		while (s) {
-			printk("frag_list real length: %d\n", skb_headlen(s));
-			s = s->next;
-		}
-	}
-	if (ipheader->saddr == 0xee62a8c0) {
-	}
-*/
 	return 0;
 }
 
@@ -48,47 +26,19 @@ int handle_packet_out(struct sk_buff *skb)
 	if (!mod_running)
 		return 0;
 	struct iphdr *ipheader = ip_hdr(skb);
-	/*struct skb_shared_info *psh = skb_shinfo(skb);
-	int key_len = 16;
-	printk("out: len: %d, data_len: %d, room: %d, real length: %d, ip length: %hu\n", skb->len, skb->data_len, skb->end - skb->tail, skb->len - skb->data_len, ntohs(ipheader->tot_len));
-	if (skb_is_nonlinear(skb))
-		printk("This packet is not linear. The nr_frags is %d. saddr=%#x, daddr=%#x\n", psh->nr_frags, ipheader->saddr, ipheader->daddr);
-	if (skb->next)
-		printk("next is not NULL");
-	if (psh->frag_list) {
-		struct sk_buff *s = psh->frag_list;
-		while (s) {
-			printk("frag_list real length: %d\n", skb_headlen(s));
-			s = s->next;
-		}
-	}
-
-	if (skb->data_len != 0)
-		return 1;
-
-	int room = skb->end - skb->tail;
-	int remainder = skb->len % key_len;
-	if (room < key_len + remainder)
-		return 1;
-	unsigned int datalen = 
-	if (room < )
-	*/
 	struct option *opt = opt_out_head;
 
 	while (opt) {
 		if (opt->ip == ipheader->daddr) {
-			//printk("ip header length: %d, protocol: %d, saddr: %#x, daddr: %#x\n", ipheader->ihl * 4, ipheader->protocol, ipheader->saddr, ipheader->daddr);
 			unsigned char *buf = skb_network_header(skb) + ipheader->ihl * 4;
 			printk("dport: %hu\n", ntohs(*(short *)(buf+2)));
-			/*if (ipheader->protocol == 51) {
-				ipheader->protocol = 6;
-			}*/
+			
 			struct tcphdr *tcph = tcp_hdr(skb);
 			tcph->check = 0;
 			skb->csum = csum_partial((unsigned char *)tcph, ntohs(ipheader->tot_len) - ip_hdrlen(skb), 0);
 			tcph->check = csum_tcpudp_magic(ipheader->saddr, ipheader->daddr, ntohs(ipheader->tot_len) - ip_hdrlen(skb), ipheader->protocol, skb->csum);
-			//ip->check = 0;
-			//iph->check = ip_fast_csum(iph, iph->ihl);
+			ipheader->check = 0;
+			ipheader->check = ip_fast_csum(ipheader, ipheader->ihl);
 			skb->ip_summed = CHECKSUM_NONE;
 			crypt(ENCCOM_ENCRYPT, buf, skb_tail_pointer(skb) - buf, opt->key);
 			break;
