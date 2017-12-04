@@ -29,6 +29,8 @@ static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 		return nfrags;
 
 	printk("out rlen: %d", tot_len);
+	printk("out tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
+	printk("out csum(before crypt): %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb) + 16));
 
 	tail = skb_tail_pointer(trailer);
 	memset(tail, 0, padlen - 2);
@@ -74,6 +76,7 @@ int handle_packet_out(struct sk_buff *skb)
 
 			skcipher_request_set_crypt(req, sg, sg, clen, opt->iv);
 			crypto_skcipher_encrypt(req);
+
 
 			kfree(sg);
 			skcipher_request_free(req);
@@ -123,6 +126,8 @@ int handle_packet_in(struct sk_buff *skb)
 			skb_copy_bits(skb, skb->len -2, &rlen, 2);
 
 			printk("in rlen: %d", rlen);
+		printk("out tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
+		printk("out csum(before crypt): %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb) + 16));
 			pskb_trim(skb, skb->len - (tot_len - rlen));
 
 

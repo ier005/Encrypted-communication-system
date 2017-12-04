@@ -14,12 +14,10 @@ ssize_t device_wirte(struct file *fd, const char __user *buf, size_t len, loff_t
 	//operation1, io1, id4, type1, ip4, key_len1, key
 	u_int8_t oper = cont[0];
 	if (oper == MODULE_CONT) {
-		printk("before: %d", mod_running);
 		if (mod_running)
 			mod_running = 0;
 		else
 			mod_running = 1;
-		printk("after: %d", mod_running);
 		return len;
 	}
 	u_int8_t io = cont[1];
