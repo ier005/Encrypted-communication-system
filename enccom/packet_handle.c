@@ -27,6 +27,9 @@ static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 
 	if ((nfrags = skb_cow_data(skb, padlen, &trailer)) < 0)
 		return nfrags;
+
+	printk("out rlen: %d", tot_len);
+
 	tail = skb_tail_pointer(trailer);
 	memset(tail, 0, padlen - 2);
 	memcpy(tail + padlen - 2, &(tot_len), 2);
@@ -118,6 +121,8 @@ int handle_packet_in(struct sk_buff *skb)
 			crypto_skcipher_decrypt(req);
 
 			skb_copy_bits(skb, skb->len -2, &rlen, 2);
+
+			printk("in rlen: %d", rlen);
 			pskb_trim(skb, skb->len - (tot_len - rlen));
 
 
