@@ -131,9 +131,9 @@ int handle_packet_in(struct sk_buff *skb)
 			skb_copy_bits(skb, skb->len -2, &rlen, 2);
 			ipheader->tot_len = htons(rlen);
 
-			printk("in rlen: %d", rlen);
-			printk("out tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
-			printk("out csum(before crypt): %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb) + 16));
+			printk("in tot_len: %d", ntohs(ipheader->tot_len));
+			printk("in tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
+			printk("in csum(before crypt): %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb) + 16));
 			pskb_trim(skb, skb->len - (tot_len - rlen));
 
 
