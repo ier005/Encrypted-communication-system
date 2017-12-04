@@ -40,6 +40,7 @@ static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 	memcpy(tail + padlen - 2, &(tot_len), 2);
 	pskb_put(skb, trailer, padlen);
 	ipheader->tot_len = htons(tot_len + padlen);
+	ipheader->check = 0;
 	ip_send_check(ipheader);
 	return nfrags;
 
@@ -130,6 +131,7 @@ int handle_packet_in(struct sk_buff *skb)
 
 			skb_copy_bits(skb, skb->len -2, &rlen, 2);
 			ipheader->tot_len = htons(rlen);
+			ipheader->check = 0;
 			ip_send_check(ipheader);
 
 			printk("in tot_len: %d", ntohs(ipheader->tot_len));
