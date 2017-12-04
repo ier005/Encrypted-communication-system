@@ -5,7 +5,6 @@
 #include <net/ip.h>
 #include <net/tcp.h>
 #include "options.h"
-#include "crypto.h"
 
 int handle_packet_in(struct sk_buff *skb);
 int handle_packet_out(struct sk_buff *skb);

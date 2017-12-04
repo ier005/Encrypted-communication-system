@@ -29,15 +29,17 @@ ssize_t device_wirte(struct file *fd, const char __user *buf, size_t len, loff_t
 		u_int8_t type = cont[6];
 		__be32 ip = *(__be32 *)(cont + 7);
 		u_int8_t key_len = cont[11];
+		unsigned char *iv = kmalloc(16, GFP_KERNEL);
 		unsigned char *key = kmalloc(key_len, GFP_KERNEL);
-		if (!key)
+		if (!key || !iv)
 			return 0;
 		memcpy(key, cont + 12, key_len);
+		memset(iv, 0, 16);
 
 		if (oper == OPT_ADD)
-			add_opt(io, id, type, ip, key);
+			add_opt(io, id, type, ip, key, iv);
 		else
-			mod_opt(io, id, type, ip, key);
+			mod_opt(io, id, type, ip, key, iv);
 	} else {
 		del_opt(io, id);
 	}

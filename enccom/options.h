@@ -3,6 +3,8 @@
 
 #include <linux/types.h>
 #include <linux/slab.h>
+#include <linux/scatterlist.h>
+#include <crypto/skcipher.h>
 
 #define OPT_LEN 128
 
@@ -22,14 +24,16 @@ struct option
 	u_int32_t id;
 	u_int8_t type;
 	__be32 ip;
+	struct crypto_skcipher *cipher;	
 	unsigned char *key;
+	unsigned char *iv;
 	struct option *next;
 	struct option *prev;
 };
 
 
-void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key);
-void mod_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key);
+void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key, unsigned char *iv);
+void mod_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key, unsigned char *iv);
 void del_opt(u_int8_t io, u_int32_t id);
 
 void free_opts(void);
