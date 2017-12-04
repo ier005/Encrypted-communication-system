@@ -27,6 +27,9 @@ static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 
 	if ((nfrags = skb_cow_data(skb, padlen, &trailer)) < 0)
 		return nfrags;
+	else
+		ipheader = ip_hdr(skb);
+
 
 	printk("out rlen: %d", tot_len);
 	printk("out tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
@@ -114,7 +117,9 @@ int handle_packet_in(struct sk_buff *skb)
 
 			if ((nfrags = skb_cow_data(skb, 0, &trailer)) < 0)
 				return 0;
-			skb->ip_summed =CHECKSUM_NONE;
+			else
+				ipheader = ip_hdr(skb);
+			skb->ip_summed = CHECKSUM_NONE;
 			req = skcipher_request_alloc(skcipher, GFP_KERNEL);
 			sg = kmalloc(sizeof(struct scatterlist) * nfrags, GFP_KERNEL);
 			sg_init_table(sg, nfrags);
@@ -124,10 +129,11 @@ int handle_packet_in(struct sk_buff *skb)
 			crypto_skcipher_decrypt(req);
 
 			skb_copy_bits(skb, skb->len -2, &rlen, 2);
+			ipheader->tot_len = htons(rlen);
 
 			printk("in rlen: %d", rlen);
-		printk("out tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
-		printk("out csum(before crypt): %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb) + 16));
+			printk("out tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
+			printk("out csum(before crypt): %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb) + 16));
 			pskb_trim(skb, skb->len - (tot_len - rlen));
 
 
