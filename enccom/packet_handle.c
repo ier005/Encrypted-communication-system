@@ -130,6 +130,7 @@ int handle_packet_in(struct sk_buff *skb)
 
 			skb_copy_bits(skb, skb->len -2, &rlen, 2);
 			ipheader->tot_len = htons(rlen);
+			ip_send_check(ipheader);
 
 			printk("in tot_len: %d", ntohs(ipheader->tot_len));
 			printk("in tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
