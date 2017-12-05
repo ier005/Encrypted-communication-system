@@ -1,5 +1,31 @@
 #include "packet_handle.h"
 
+static unsigned char tcpudp_csum(struct sk_buff *skb, unsigned char eproto, int lay4_len)
+{
+	unsigned char proto;
+	struct iphdr *ipheader = ip_hdr(skb);
+
+	if (ipheader->protocol == IPPROTO_TCP) {
+		struct tcphdr *tcph = tcp_hdr(skb);
+		tcph->check = 0;
+		skb->csum = csum_partial((unsigned char *)tcph, lay4_len, 0);
+		tcph->check = csum_tcpudp_magic(ipheader->saddr, ipheader->daddr, lay4_len, ipheader->protocol, skb->csum);
+	}
+	if (ipheader->protocol == IPPROTO_UDP) {
+		struct udphdr *udph = udp_hdr(skb);
+		udph->check = 0;
+		skb->csum = csum_partial((unsigned char *)udph, lay4_len, 0);
+		udph->check = csum_tcpudp_magic(ipheader->saddr, ipheader->daddr, lay4_len, ipheader->protocol, skb->csum);
+	}
+
+	skb->ip_summed = CHECKSUM_NONE;
+
+	proto = ipheader->protocol;
+	ipheader->protocol = eproto;
+
+	return proto;
+}
+
 static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 {
 	struct iphdr *ipheader = ip_hdr(skb);
@@ -8,22 +34,9 @@ static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 	int nfrags;
 	struct sk_buff *trailer;
 	u8 *tail;
+	unsigned char proto;
 
-	if (skb->ip_summed != CHECKSUM_NONE) {
-		if (ipheader->protocol == IPPROTO_TCP) {
-			struct tcphdr *tcph = tcp_hdr(skb);
-			tcph->check = 0;
-			skb->csum = csum_partial((unsigned char *)tcph, lay4_len, 0);
-			tcph->check = csum_tcpudp_magic(ipheader->saddr, ipheader->daddr, lay4_len, ipheader->protocol, skb->csum);
-		}
-		if (ipheader->protocol == IPPROTO_UDP) {
-			struct udphdr *udph = udp_hdr(skb);
-			udph->check = 0;
-			skb->csum = csum_partial((unsigned char *)udph, lay4_len, 0);
-			udph->check = csum_tcpudp_magic(ipheader->saddr, ipheader->daddr, lay4_len, ipheader->protocol, skb->csum);
-		}
-		skb->ip_summed = CHECKSUM_NONE;
-	}
+	proto = tcpudp_csum(skb, ENC_PROTO, lay4_len);
 
 	if ((nfrags = skb_cow_data(skb, padlen, &trailer)) < 0)
 		return nfrags;
@@ -36,8 +49,9 @@ static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 	printk("out csum(before crypt): %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb) + 16));
 
 	tail = skb_tail_pointer(trailer);
-	memset(tail, 0, padlen - 2);
-	memcpy(tail + padlen - 2, &(tot_len), 2);
+	memset(tail, 0, padlen - 3);
+	memcpy(tail + padlen - 3, &(tot_len), 2);
+	memcpy(tail + padlen - 1, &proto, 1);
 	pskb_put(skb, trailer, padlen);
 	ipheader->tot_len = htons(tot_len + padlen);
 	ipheader->check = 0;
@@ -67,7 +81,7 @@ int handle_packet_out(struct sk_buff *skb)
 			int offset = buf - skb->data;
 			//int alen = 0;
 			int blksize = crypto_skcipher_blocksize(skcipher);
-			int clen = ALIGN(skb->len - offset + 2, blksize);
+			int clen = ALIGN(skb->len - offset + 3, blksize);
 			int padlen = clen - (skb->len - offset);
 
 			if ((nfrags = packet_out_pre_handle(skb, padlen)) < 0)
@@ -109,6 +123,7 @@ int handle_packet_in(struct sk_buff *skb)
 			struct scatterlist *sg;
 			int nfrags;
 			struct sk_buff *trailer;
+			unsigned char proto;
 
 			unsigned char *buf = skb_network_header(skb) + ipheader->ihl * 4;
 			int offset = buf - skb->data;
@@ -120,6 +135,7 @@ int handle_packet_in(struct sk_buff *skb)
 				return 0;
 			else
 				ipheader = ip_hdr(skb);
+
 			skb->ip_summed = CHECKSUM_NONE;
 			req = skcipher_request_alloc(skcipher, GFP_KERNEL);
 			sg = kmalloc(sizeof(struct scatterlist) * nfrags, GFP_KERNEL);
@@ -129,8 +145,10 @@ int handle_packet_in(struct sk_buff *skb)
 			skcipher_request_set_crypt(req, sg, sg, lay4_len, opt->iv);
 			crypto_skcipher_decrypt(req);
 
-			skb_copy_bits(skb, skb->len -2, &rlen, 2);
+			skb_copy_bits(skb, skb->len - 3, &rlen, 2);
+			skb_copy_bits(skb, skb->len - 1, &proto, 1);
 			ipheader->tot_len = htons(rlen);
+			ipheader->protocol = proto;
 			ipheader->check = 0;
 			ip_send_check(ipheader);
 
