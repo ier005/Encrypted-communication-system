@@ -9,11 +9,11 @@ An encrypted communication system:
 
 ## Config Rules
 
-format: `in/out cipher ip key`
+Format: `in/out cipher ip key`
 
-available cipher type: AES-ECB(128), AES-CBC(128), AES-XTS(128), AES-CTR(128)
+Available cipher type: AES-ECB(128), AES-CBC(128), AES-XTS(128), AES-CTR(128)
 
-For exanple:
+For example:
 
 	out AES-ECB(128) 192.168.98.238 0123456789abcdef
 
