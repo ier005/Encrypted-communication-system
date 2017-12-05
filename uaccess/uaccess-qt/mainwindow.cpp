@@ -23,6 +23,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     algs.push_back(tr("AES-ECB(128)"));
+    algs.push_back(tr("AES-CBC(128)"));
+    algs.push_back(tr("AES-XTS(128)"));
+    algs.push_back(tr("AES-CTR(128)"));
 
     icon_end->setEnabled(0);
     ui->mainToolBar->addAction(icon_start);
@@ -218,6 +221,7 @@ void MainWindow::on_out_mod_clicked()
 
     index = out_rules->index(row, 1);
     QString salg = out_rules->data(index).toString();
+
     int alg = 0;
     while (salg != algs.at(alg))
         alg++;
@@ -229,6 +233,7 @@ void MainWindow::on_out_mod_clicked()
     QString key = out_rules->data(index).toString();
 
     emit sig_option_info(2, id, alg, ip, key, fd);
+
     optionDialog->exec();
 }
 
@@ -288,6 +293,11 @@ void MainWindow::option_handle(int operation, int id, int alg, QString ip, QStri
             }
         }
     }
+
+    this->ui->in_mod->setEnabled(0);
+    this->ui->in_del->setEnabled(0);
+    this->ui->out_mod->setEnabled(0);
+    this->ui->out_del->setEnabled(0);
 }
 
 void MainWindow::on_tableView_clicked(const QModelIndex &index)
@@ -316,6 +326,9 @@ void MainWindow::on_out_del_clicked()
         ui->out_mod->setEnabled(0);
         ui->out_del->setEnabled(0);
     }
+
+    this->ui->out_mod->setEnabled(1);
+    this->ui->out_del->setEnabled(1);
 }
 
 void MainWindow::on_in_del_clicked()
@@ -332,4 +345,7 @@ void MainWindow::on_in_del_clicked()
         ui->in_mod->setEnabled(0);
         ui->in_del->setEnabled(0);
     }
+
+    this->ui->in_mod->setEnabled(1);
+    this->ui->in_del->setEnabled(1);
 }

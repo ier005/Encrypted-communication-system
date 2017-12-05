@@ -9,6 +9,9 @@ OptionDialog::OptionDialog(QWidget *parent) :
     ui->setupUi(this);
     QStringList slist;
     slist.append(tr("AES-ECB(128)"));
+    slist.append(tr("AES-CBC(128)"));
+    slist.append(tr("AES-XTS(128)"));
+    slist.append(tr("AES-CTR(128)"));
     ui->comboBox->addItems(slist);
 
 }
@@ -22,11 +25,9 @@ OptionDialog::~OptionDialog()
 void OptionDialog::on_comboBox_currentIndexChanged(int index)
 {
     switch (index) {
-        case 0:
+        default:
             ui->label_3->setText(tr("Key(16 Bytes)"));
             key_len = 16;
-            break;
-        default:
             break;
     }
 }

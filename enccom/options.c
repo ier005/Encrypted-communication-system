@@ -28,6 +28,18 @@ void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char 
 			opt->cipher = crypto_alloc_skcipher("ecb(aes-generic)", 0, 0);
 			crypto_skcipher_setkey(opt->cipher, key, 16);
 			break;
+		case 1:
+			opt->cipher = crypto_alloc_skcipher("cbc(aes)", 0, 0);
+			crypto_skcipher_setkey(opt->cipher, key, 16);
+			break;
+		case 2:
+			opt->cipher = crypto_alloc_skcipher("xts(aes)", 0, 0);
+			crypto_skcipher_setkey(opt->cipher, key, 16);
+			break;
+		case 3:
+			opt->cipher = crypto_alloc_skcipher("ctr(aes)", 0, 0);
+			crypto_skcipher_setkey(opt->cipher, key, 16);
+			break;
 		default:
 			break;
 	}
@@ -71,9 +83,21 @@ void mod_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char 
 			opt->cipher = crypto_alloc_skcipher("ecb(aes-generic)", 0, 0);
 			crypto_skcipher_setkey(opt->cipher, key, 16);
 			break;
+		case 1:
+			opt->cipher = crypto_alloc_skcipher("cbc(aes)", 0, 0);
+			crypto_skcipher_setkey(opt->cipher, key, 16);
+			break;
+		case 2:
+			opt->cipher = crypto_alloc_skcipher("xts(aes)", 0, 0);
+			crypto_skcipher_setkey(opt->cipher, key, 16);
+			break;
+		case 3:
+			opt->cipher = crypto_alloc_skcipher("ctr(aes)", 0, 0);
+			crypto_skcipher_setkey(opt->cipher, key, 16);
+			break;
 		default:
 			break;
-	}
+	}	
 
 }
 
