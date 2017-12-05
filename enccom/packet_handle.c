@@ -1,5 +1,7 @@
 #include "packet_handle.h"
 
+// calculate the checksum if protocol is tcp or udp
+// change the protocol in ip header
 static unsigned char tcpudp_csum(struct sk_buff *skb, unsigned char eproto, int lay4_len)
 {
 	unsigned char proto;
@@ -26,6 +28,9 @@ static unsigned char tcpudp_csum(struct sk_buff *skb, unsigned char eproto, int 
 	return proto;
 }
 
+
+// add padding data, the real leagth of the ip packet and
+// the real protocol to the tail of the skb
 static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 {
 	struct iphdr *ipheader = ip_hdr(skb);
@@ -44,10 +49,6 @@ static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 		ipheader = ip_hdr(skb);
 
 
-	printk("out rlen: %d", tot_len);
-	printk("out tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
-	printk("out csum(before crypt): %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb) + 16));
-
 	tail = skb_tail_pointer(trailer);
 	memset(tail, 0, padlen - 3);
 	memcpy(tail + padlen - 3, &(tot_len), 2);
@@ -61,7 +62,8 @@ static int packet_out_pre_handle(struct sk_buff *skb, int padlen)
 }
 
 
-
+// check whether the packet should be encrypted, 
+// add the padding data and encrypted
 int handle_packet_out(struct sk_buff *skb)
 {
 	if (!mod_running)
@@ -108,6 +110,8 @@ int handle_packet_out(struct sk_buff *skb)
 }
 
 
+// check whether the packet should be decrypted, 
+// decrypted, trim the padding data and recover the ip protocol and tot_len
 int handle_packet_in(struct sk_buff *skb)
 {
 	if (!mod_running)
@@ -152,9 +156,6 @@ int handle_packet_in(struct sk_buff *skb)
 			ipheader->check = 0;
 			ip_send_check(ipheader);
 
-			printk("in tot_len: %d", ntohs(ipheader->tot_len));
-			printk("in tcphead: %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb)));
-			printk("in csum(before crypt): %#x", *(int *)((unsigned char*)ipheader + ip_hdrlen(skb) + 16));
 			pskb_trim(skb, skb->len - (tot_len - rlen));
 
 

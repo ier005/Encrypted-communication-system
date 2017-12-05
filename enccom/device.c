@@ -1,6 +1,6 @@
 #include "device.h"
 
-
+// handle the option data from userspace
 ssize_t device_wirte(struct file *fd, const char __user *buf, size_t len, loff_t *ppos)
 {
 	char cont[OPT_LEN];

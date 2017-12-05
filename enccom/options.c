@@ -1,8 +1,12 @@
 #include "options.h"
 
+// indicate if the module is running
 int mod_running;
+// the head and tail of global option chains(two chains: in and out)
 struct option *opt_in_head, *opt_in_tail, *opt_out_head, *opt_out_tail;
 
+
+// add an option
 void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key, unsigned char *iv)
 {
 	struct option *opt, **option_head, **option_tail;
@@ -23,6 +27,7 @@ void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char 
 	opt->key = key;
 	opt->iv = iv;
 
+	// allocate the crypto cipher
 	switch (type) {
 		case 0:
 			opt->cipher = crypto_alloc_skcipher("ecb(aes-generic)", 0, 0);
@@ -57,6 +62,9 @@ void add_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char 
 
 }
 
+
+// modify the existed option, search the option by id
+// free old parameters and allocate new parameters
 void mod_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char *key, unsigned char *iv)
 {
 	struct option *opt;
@@ -101,6 +109,8 @@ void mod_opt(u_int8_t io, u_int32_t id, u_int8_t type, __be32 ip, unsigned char 
 
 }
 
+
+// delete an option from the chain
 void del_opt(u_int8_t io, u_int32_t id)
 {
 	struct option *opt;
@@ -136,6 +146,7 @@ void del_opt(u_int8_t io, u_int32_t id)
 	kfree(opt);
 }
 
+// to free all the options when the module quits
 void free_opts(void)
 {
 	struct option *opt = opt_in_head;

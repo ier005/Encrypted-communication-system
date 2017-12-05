@@ -6,6 +6,7 @@
 #include <net/tcp.h>
 #include "options.h"
 
+// the protocol to change when encrypt
 #define ENC_PROTO 50
 
 int handle_packet_in(struct sk_buff *skb);

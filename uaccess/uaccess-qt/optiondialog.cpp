@@ -1,6 +1,7 @@
 #include "optiondialog.h"
 #include "ui_optiondialog.h"
 
+// initial some variables
 OptionDialog::OptionDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::OptionDialog),
@@ -22,6 +23,7 @@ OptionDialog::~OptionDialog()
     delete ui;
 }
 
+// in case we want to supply a crypto algrithm with larger key length
 void OptionDialog::on_comboBox_currentIndexChanged(int index)
 {
     switch (index) {
@@ -32,6 +34,7 @@ void OptionDialog::on_comboBox_currentIndexChanged(int index)
     }
 }
 
+// check the validation of input and call function to write option
 void OptionDialog::on_pushButton_clicked()
 {
     int alg = this->ui->comboBox->currentIndex();
@@ -57,6 +60,9 @@ void OptionDialog::on_pushButton_2_clicked()
     this->close();
 }
 
+// receive the option parameters delivered from mainwindow,
+// when OK button is clicked, we should know the intended operation and id ...
+// so save them in variables
 void OptionDialog::option_info(int operation, int id, int alg, QString ip, QString key, int fd)
 {
     this->fd = fd;
@@ -67,6 +73,8 @@ void OptionDialog::option_info(int operation, int id, int alg, QString ip, QStri
     this->ui->lineEdit_2->setText(key);
 }
 
+
+// decide the parameters of the called function according to the operation
 void OptionDialog::handle_original_option(int oper, int id, int alg, QString ip, int key_len, QString key, int fd)
 {
     switch (oper) {
@@ -89,6 +97,8 @@ void OptionDialog::handle_original_option(int oper, int id, int alg, QString ip,
     emit sig_option(oper, id, alg, ip, key);
 }
 
+
+// write the option data to the virtural driver file to config the module
 void OptionDialog::cmt_option(int oper, int io, int id, int type, char *ip, int key_len, char *key, int fd)
 {
     char opt[MAX_OPT_LEN];

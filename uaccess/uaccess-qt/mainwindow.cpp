@@ -6,6 +6,9 @@ void cclose(int fd)
     close(fd);
 }
 
+// in the constructor function we initial some variables,
+// open the virtual driver file to deliver the user-set options
+// and insert the kernel module (the path is fixed!)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -87,6 +90,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::sig_original_option, optionDialog, &OptionDialog::handle_original_option);
 }
 
+// in the destructor we free some variables , close the virtual driver file and remove the kernel module
 MainWindow::~MainWindow()
 {
     delete in_rules;
@@ -102,6 +106,7 @@ MainWindow::~MainWindow()
         QMessageBox::critical(this, "Error", "Can not remove the encrypted module!");
 }
 
+// set the mod_running variable in the kernel module to make the module in use
 void MainWindow::on_icon_start_clicked()
 {
     unsigned char opt = 0;
@@ -111,6 +116,7 @@ void MainWindow::on_icon_start_clicked()
     ui->statusBar->showMessage(tr("The encrypted system is running!"));
 }
 
+// unset the mod_running variable
 void MainWindow::on_icon_end_clicked()
 {
     unsigned char opt = 0;
@@ -120,6 +126,10 @@ void MainWindow::on_icon_end_clicked()
     ui->statusBar->showMessage(tr("The encrypted system has been stopped."));
 }
 
+// open an text file and analyse the option
+// line begin with '#' is treated as comment
+// emit a signal to call the funtion of OptionDialog to add options
+// Warning: Not check the input validation yet
 void MainWindow::on_icon_import_clicked()
 {
     QString filename = fileDialog->getOpenFileName(this, "Open");
@@ -154,6 +164,7 @@ void MainWindow::on_icon_import_clicked()
     }
 }
 
+// choose a path and save the present options into a text file
 void MainWindow::on_icon_export_clicked()
 {
     QString filename = fileDialog->getSaveFileName(this, "Save as", "./rules.txt");
@@ -198,6 +209,12 @@ void MainWindow::on_icon_export_clicked()
 
 }
 
+
+// add or modify the options of out and in chains in kernel module,
+// it opens a dialog and user can set the parameter
+// when adding we should deliver the next option id.
+// when modifying we should let the dialog konw which option
+// is to be modified and its present options
 void MainWindow::on_out_add_clicked()
 {
     emit sig_option_info(0, out_id, 0, tr(""), tr(""), fd);
@@ -263,6 +280,8 @@ void MainWindow::on_in_mod_clicked()
 }
 
 
+// the option-set dialog ddliver the new option patameters, so that we can
+// show them in tables
 void MainWindow::option_handle(int operation, int id, int alg, QString ip, QString key)
 {
     QString salg = algs.at(alg);
@@ -312,6 +331,8 @@ void MainWindow::on_tableView_2_clicked(const QModelIndex &index)
     this->ui->in_del->setEnabled(1);
 }
 
+
+// deleting option is done in mainwindow directly
 void MainWindow::on_out_del_clicked()
 {
     QModelIndex index = ui->tableView->currentIndex();

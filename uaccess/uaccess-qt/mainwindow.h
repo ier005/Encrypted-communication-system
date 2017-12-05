@@ -27,9 +27,9 @@ private:
     QAction *icon_import, *icon_export;
     QStandardItemModel *in_rules, *out_rules;
     OptionDialog *optionDialog;
-    int in_id;
-    int out_id;
-    std::vector<QString> algs;
+    int in_id;  // save the present 'in' option id
+    int out_id;  // save the present 'out' option id
+    std::vector<QString> algs;  // save the crypto algrithms string
 
 private slots:
     void on_icon_start_clicked();

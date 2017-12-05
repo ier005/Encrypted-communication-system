@@ -11,10 +11,6 @@
 #define OPT_IN 0
 #define OPT_OUT 1
 
-#define MODULE_CONT 0
-#define OPT_ADD 1
-#define OPT_MOD 2
-#define OPT_DEL 3
 
 extern struct option *opt_in_head, *opt_in_tail, *opt_out_head, *opt_out_tail;
 extern int mod_running;
