@@ -339,8 +339,9 @@ void MainWindow::on_out_del_clicked()
     int id = out_rules->data(index).toInt();
     char opt[5];
     opt[0] = 3;
-    memcpy(opt + 1, &id, 4);
-    write(fd, opt, 5);
+    opt[1] = 1;
+    memcpy(opt + 2, &id, 4);
+    write(fd, opt, 6);
 
     out_rules->removeRow(index.row());
     if (out_rules->rowCount() == 0) {
@@ -358,8 +359,9 @@ void MainWindow::on_in_del_clicked()
     int id = in_rules->data(index).toInt();
     char opt[5];
     opt[0] = 3;
-    memcpy(opt + 1, &id, 4);
-    write(fd, opt, 5);
+    opt[1] = 0;
+    memcpy(opt + 2, &id, 4);
+    write(fd, opt, 6);
 
     in_rules->removeRow(index.row());
     if (in_rules->rowCount() == 0) {
